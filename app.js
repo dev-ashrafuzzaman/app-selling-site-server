@@ -120,7 +120,7 @@ connectToDatabase()
 
 
         // ---------------Image Upload APIS Start-----------//
-        app.post("/public/upload", userverifyJWT, userverifyAdmin, uploadRoutes.single("image"), (req, res) => {
+        app.post("/public/upload", uploadRoutes.single("image"), (req, res) => {
             const imageUrl = "/public/upload/" + req.file.filename;
             res.send({ imageUrl });
         });

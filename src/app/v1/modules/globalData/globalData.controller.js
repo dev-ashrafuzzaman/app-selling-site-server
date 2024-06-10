@@ -5,7 +5,7 @@ const { getDatabase } = require('../../../../utils/database');
 exports.getGlobalData = async (req, res) => {
     try {
       const db = getDatabase();
-      const global = await db.collection('global').find().toArray();
+      const global = await db.collection('utils').find().toArray();
     const result = global[0]
       res.send({ result });
     } catch (err) {
@@ -21,7 +21,7 @@ exports.updateGlobalData = async (req, res) => {
     const { data } = req.body;
     const db = getDatabase();
     try {
-      const result = await db.collection('global').updateOne(filter, { $set: data });
+      const result = await db.collection('utils').updateOne(filter, { $set: data });
       res.send(result)
   
     } catch (err) {

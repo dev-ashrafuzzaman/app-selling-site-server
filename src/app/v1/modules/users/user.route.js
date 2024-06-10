@@ -4,6 +4,7 @@ const verifyJWT = require('../middleware/verifyJWT');
 const verifyAdmin = require('../middleware/verifyAdmin');
 const router = express.Router();
 
+router.get('/api/v1/admin/orders', userController.getOrders);
 router.post('/api/v1/admin/user',verifyJWT, verifyAdmin, userController.createUser);
 router.get('/api/v1/admin/users', verifyJWT,verifyAdmin, userController.getUsers);
 router.get('/api/v1/admin/block/users', verifyJWT,verifyAdmin, userController.getBlockUsers);

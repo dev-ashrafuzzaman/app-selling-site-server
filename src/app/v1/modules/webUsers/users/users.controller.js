@@ -2,7 +2,7 @@ const { ObjectId } = require("mongodb");
 const { getDatabase } = require("../../../../../utils/database");
 const { generateReferCode, generateUserUit } = require("./users.utils");
 const bcrypt = require("bcryptjs");
-const { parse, format } = require('date-fns');
+const { parse, format } = require("date-fns");
 
 const {
   getCurrentDateTimeInDhaka,
@@ -11,57 +11,56 @@ const {
 
 exports.webUtils = async (req, res) => {
   const db = getDatabase();
-  const query = { _id: new ObjectId("6651642f2be2c4bd602776a4") };
-  const result = await db.collection("utils").findOne(query);
+  const utils = await db.collection("utils").find().toArray();
   const categorys = await db.collection("categories").find().toArray();
   const products = await db.collection("products").find().limit(20).toArray();
+  const result = utils[0];
   res.send({ result, categorys, products });
 };
 
 exports.getWebProducts = async (req, res) => {
-    const db = getDatabase();
-    const { categoryId } = req.query;
-  
-    let query = {};
-    if (categoryId) {
-      query = { categoryId: categoryId }; // Assumes categoryId is a field in your products collection
-    }
-  
-    try {
-      const products = await db.collection("products").find(query).toArray();
-      res.status(200).send(products);
-    } catch (error) {
-      res.status(500).send({ message: "Failed to fetch products", error });
-    }
-  };
+  const db = getDatabase();
+  const { categoryId } = req.query;
+
+  let query = {};
+  if (categoryId) {
+    query = { categoryId: categoryId }; // Assumes categoryId is a field in your products collection
+  }
+
+  try {
+    const products = await db.collection("products").find(query).toArray();
+    res.status(200).send(products);
+  } catch (error) {
+    res.status(500).send({ message: "Failed to fetch products", error });
+  }
+};
 
 exports.webOrder = async (req, res) => {
   const db = getDatabase();
   const order = req.body;
-  const result = await db.collection('orders').insertOne(order);
+  const result = await db.collection("orders").insertOne(order);
   res.send(result);
 };
 
 exports.getWebOrder = async (req, res) => {
-    try {
-      const db = getDatabase();
-      const id = req.params.id;
-      const query = { uId: id };
-      const result = await db.collection("orders").find(query).toArray();
-      
-      // Sort the results by orderTime in descending order
-      result.sort((a, b) => {
-        const dateA = parse(a.orderTime, 'dd-MM-yyyy h:mm:ss a', new Date());
-        const dateB = parse(b.orderTime, 'dd-MM-yyyy h:mm:ss a', new Date());
-        return dateB - dateA; // Descending order
-      });
-      res.send(result);
+  try {
+    const db = getDatabase();
+    const id = req.params.id;
+    const query = { uId: id };
+    const result = await db.collection("orders").find(query).toArray();
 
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-  };
+    // Sort the results by orderTime in descending order
+    result.sort((a, b) => {
+      const dateA = parse(a.orderTime, "dd-MM-yyyy h:mm:ss a", new Date());
+      const dateB = parse(b.orderTime, "dd-MM-yyyy h:mm:ss a", new Date());
+      return dateB - dateA; // Descending order
+    });
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 exports.getWebProduct = async (req, res) => {
   try {
     const db = getDatabase();

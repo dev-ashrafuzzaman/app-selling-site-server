@@ -3,6 +3,37 @@ const { getDatabase } = require('../../../../utils/database');
 const bcrypt = require('bcryptjs');
 const { getCurrentDateTimeInDhaka, formatDateTime } = require('../../../../utils/currentDateTime');
 
+
+
+exports.getOrders = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 2, search = '' } = req.query;
+    const db = getDatabase();
+    const query = {};
+
+    if (search) {
+      query.$or = [
+        { uid: { $regex: search, $options: 'i' } },
+        { status: { $regex: search, $options: 'i' } },
+        { orderTime: { $regex: search, $options: 'i' } },
+        { _id: { $regex: search, $options: 'i' } },
+      ];
+    }
+    const totalCount = await db.collection('orders').countDocuments(query);
+    const result = await db.collection('orders')
+      .find(query).sort({ joinDate: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(parseInt(pageSize))
+      .toArray();
+
+    res.json({ totalCount, data: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
 exports.createUser = async (req, res) => {
   const { user } = req.body;
   const db = getDatabase();
@@ -45,6 +76,7 @@ exports.getUsers = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 exports.getBlockUsers = async (req, res) => {
   try {
