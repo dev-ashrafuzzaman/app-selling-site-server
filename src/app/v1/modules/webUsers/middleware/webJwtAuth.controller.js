@@ -40,6 +40,10 @@ exports.checkWebUser = async (req, res) => {
     referCode: data?.referCode,
     comStatus: data?.comStatus,
     id: data?._id,
+    type: data?.type,
+    govId: data?.govId,
+    resellerStatus: data?.resellerStatus,
+    url: data?.url,
   };
   const history = await db
     .collection("history")

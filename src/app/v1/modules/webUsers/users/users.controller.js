@@ -112,13 +112,57 @@ exports.webUserRegister = async (req, res) => {
   const formattedDhakaTime = formatDateTime(dhakaTime);
 
   const db = getDatabase();
-  const { name, email, password, phone } = req.body;
+  const { name, email, password, referId, phone } = req.body;
+  let referCode = generateReferCode();
+  const existingreferCode = await db.collection("users").findOne({ referCode });
+  while (existingreferCode) {
+    referCode = generateReferCode();
+    existingreferCode = await db.collection("users").findOne({ referCode });
+  }
 
   const existingUser = await db
     .collection("users")
     .findOne({ $or: [{ email }] });
   if (existingUser) {
     return res.json({ Error: "User already exists" });
+  }
+
+  let refBy = [];
+
+  if (referId) {
+    const existingreferID = await db
+      .collection("users")
+      .findOne({ referCode: referId });
+    if (existingreferID) {
+      const global = await db.collection("global").find().toArray();
+      refBy = existingreferID.refBy;
+      refBy.push(referCode);
+      const remainingBalance =
+        parseFloat(existingreferID?.balance) + parseFloat(global[0].referBonus);
+      await db
+        .collection("users")
+        .updateOne(
+          { referCode: referId },
+          {
+            $set: {
+              refBy: refBy,
+              balance: parseFloat(remainingBalance).toFixed(4),
+            },
+          }
+        );
+      const userHis = {
+        uid: existingreferID._id.toString(),
+        type: `Refer-Commission`,
+        amount: parseFloat(global[0].referBonus),
+        by: "User",
+        date: formattedDhakaTime,
+        status: true,
+      };
+
+      await db.collection("history").insertOne(userHis);
+    } else {
+      return res.json({ Error: "Refer ID is not valid!" });
+    }
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -128,11 +172,33 @@ exports.webUserRegister = async (req, res) => {
     email,
     phone,
     password: hashedPassword,
+    referCode,
     status: true,
+    balance: parseFloat(0),
+    refBy: [],
+    notice: "আপনাকে স্বাগতম",
+    comStatus: true,
     joinDate: formattedDhakaTime,
+    type: "Normal",
   });
   res.json({ result, auth: true });
 };
+
+exports.updateApplyReseller = async (req, res) => {
+  const id = req.params.id;
+  const filter = { email: id }
+  const { reseller } = req.body;
+  const db = getDatabase();
+  try {
+    const result = await db.collection('users').updateOne(filter, { $set: reseller });
+    res.send(result)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
 
 exports.updatePassword = async (req, res) => {
   const id = req.params.id;
@@ -156,12 +222,50 @@ exports.updatePassword = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   const id = req.params.id;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
+
   const db = getDatabase();
-  const query = { _id: new ObjectId(id) };
+  const userQuery = { _id: new ObjectId(id) };
+
+  const session = db.startSession();
+
   try {
-    const result = await db.collection("users").deleteOne(query);
-    res.send(result);
+    session.startTransaction();
+
+    const user = await db.collection("users").findOne(userQuery, { session });
+
+    if (!user) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const orderQuery = { uId: user.email };
+
+    const deleteUserResult = await db.collection("users").deleteOne(userQuery, { session });
+    if (deleteUserResult.deletedCount === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({ error: "Failed to delete user" });
+    }
+
+    const deleteOrdersResult = await db.collection("orders").deleteMany(orderQuery, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({
+      message: "User and associated orders deleted successfully",
+      userDeletionCount: deleteUserResult.deletedCount,
+      ordersDeletionCount: deleteOrdersResult.deletedCount,
+    });
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error deleting user and orders:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

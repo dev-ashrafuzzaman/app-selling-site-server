@@ -5,6 +5,90 @@ const { getCurrentDateTimeInDhaka, formatDateTime } = require('../../../../utils
 
 
 
+exports.getProducts = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 2, search = '' } = req.query;
+    const db = getDatabase();
+    const query = {};
+
+    if (search) {
+      query.$or = [
+        { uid: { $regex: search, $options: 'i' } },
+        { status: { $regex: search, $options: 'i' } },
+        { orderTime: { $regex: search, $options: 'i' } },
+        { _id: { $regex: search, $options: 'i' } },
+      ];
+    }
+    
+    const totalCount = await db.collection('products').countDocuments(query);
+    const result = await db.collection('products')
+      .find(query).sort({ joinDate: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(parseInt(pageSize))
+      .toArray();
+
+    res.json({ totalCount, data: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getSingleProduct = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const result = await db.collection('products').find().toArray();
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+exports.createProduct = async (req, res) => {
+  const { product } = req.body;
+  const db = getDatabase();
+  try {
+    const result = await db.collection('products').insertOne(product);
+    res.send(result)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.updateProductStatus = async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) }
+  const { statusData } = req.body;
+  const db = getDatabase();
+  try {
+    const result = await db.collection('products').updateOne(filter, { $set: statusData });
+    res.send(result)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.deleteProduct = async (req, res) => {
+  const id = req.params.id;
+  const db = getDatabase();
+  const query = { _id: new ObjectId(id) };
+  try {
+    const result = await db.collection('products').deleteOne(query);
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ---- Product End ----//
+
+
+// ---- Order Start ----//
 exports.getOrders = async (req, res) => {
   try {
     const { page = 1, pageSize = 2, search = '' } = req.query;
@@ -19,6 +103,7 @@ exports.getOrders = async (req, res) => {
         { _id: { $regex: search, $options: 'i' } },
       ];
     }
+    
     const totalCount = await db.collection('orders').countDocuments(query);
     const result = await db.collection('orders')
       .find(query).sort({ joinDate: -1 })
@@ -32,8 +117,48 @@ exports.getOrders = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+exports.updateOrderStatus = async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) }
+  const { statusData } = req.body;
+  const db = getDatabase();
+  try {
+    const result = await db.collection('orders').updateOne(filter, { $set: statusData });
+    res.send(result)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
+exports.updateOrderDelivary = async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) }
+  const { statusData } = req.body;
+  const db = getDatabase();
+  try {
+    const result = await db.collection('orders').updateOne(filter, { $set: statusData });
+    res.send(result)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
+exports.deleteOrder = async (req, res) => {
+  const id = req.params.id;
+  const db = getDatabase();
+  const query = { _id: new ObjectId(id) };
+  try {
+    const result = await db.collection('orders').deleteOne(query);
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+//---- Order End ------//
 exports.createUser = async (req, res) => {
   const { user } = req.body;
   const db = getDatabase();
@@ -111,6 +236,39 @@ exports.getBlockUsers = async (req, res) => {
   }
 };
 
+
+exports.getReseller = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, search = '', type } = req.query;
+    const db = getDatabase();
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { userName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // Updated query to filter blocked users
+    query.resellerStatus = type == 'pending' ? 'Pending' : type == 'approved' ? 'Approved' : 'Reject';
+
+    const totalCount = await db.collection('users').countDocuments(query);
+    const result = await db.collection('users')
+      .find(query)
+      .sort({ joinDate: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(parseInt(pageSize))
+      .toArray();
+
+    res.json({ totalCount, data: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 exports.getUser = async (req, res) => {
   try {
     const db = getDatabase();
@@ -139,6 +297,24 @@ exports.getTrackUser = async (req, res) => {
     const directSubmit = await db.collection('directSubmit').find(hQuery).sort({ visitTime: -1 }).limit(10).toArray();
     const global = await db.collection('global').find().toArray();
     res.send({ user, history, withdraw, jobSubmit, directSubmit, global: global[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getTrackWebUser = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const id = req.params.id;
+    const query = { email: id }
+    const hQuery = { uId: id }
+    
+    const user = await db.collection('users').findOne(query);
+
+    const order = await db.collection('orders').find(hQuery).sort({ orderTime: -1 }).limit(10).toArray();
+    const global = await db.collection('utils').find().toArray();
+    res.send({ user,order , global: global[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -175,26 +351,27 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
+
+
+
 exports.deleteUser = async (req, res) => {
   const id = req.params.id;
   const db = getDatabase();
   const query = { _id: new ObjectId(id) };
-  const dQuery = { uid: id };
-
   try {
     const user = await db.collection('users').findOne(query)
-    const uQuery = { uid: user?.email };
+    const uQuery = { uId: user?.email };
     await db.collection('withdraws').deleteMany(uQuery);
+    await db.collection('orders').deleteMany(uQuery);
+    await db.collection('history').deleteMany(uQuery);
     const result = await db.collection('users').deleteOne(query);
-    await db.collection('directSubmit').deleteMany(dQuery);
-    await db.collection('history').deleteMany(dQuery);
-    await db.collection('jobSubmit').deleteMany(dQuery);
     res.send(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 
