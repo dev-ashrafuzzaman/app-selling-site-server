@@ -71,6 +71,20 @@ router.get(
   verifyAdmin,
   userController.getReseller
 );
+router.patch(
+  "/api/v1/admin/reseller/status/:id",
+  verifyJWT,
+  verifyAdmin,
+  userController.updateResellerStatus
+);
+
+router.delete(
+  "/api/v1/admin/reseller/:id",
+  verifyJWT,
+  verifyAdmin,
+  userController.deleteReseller
+);
+
 router.get(
   "/api/v1/admin/block/users",
   verifyJWT,

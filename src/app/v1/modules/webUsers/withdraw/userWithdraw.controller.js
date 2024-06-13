@@ -6,7 +6,7 @@ exports.createWithdraw = async (req, res) => {
     const dhakaTime = await getCurrentDateTimeInDhaka();
     const formattedDhakaTime = formatDateTime(dhakaTime);
 
-    const { withdraw,currency } = req.body;
+    const { withdraw } = req.body;
     const db = getDatabase();
     const query = { _id: new ObjectId(withdraw.uid) }
     try {
@@ -14,7 +14,7 @@ exports.createWithdraw = async (req, res) => {
             return res.send({ Error: 'Failed to fetch Dhaka time' })
         }
         const user = await db.collection('users').findOne(query);
-        const global = await db.collection('global').find().toArray();
+        const global = await db.collection('utils').find().toArray();
 
 
         if (parseFloat(global[0]?.withdrawRules?.minAmount) > parseFloat(withdraw?.amount)) {
@@ -40,7 +40,7 @@ exports.createWithdraw = async (req, res) => {
             outAmount: parseFloat(withdraw.amount),
             status: "Pending",
             date: formattedDhakaTime,
-            currency
+            currency: user.currency
         }
 
         const remainingBalance = parseFloat(user?.balance) - totalWithdraw;

@@ -158,6 +158,7 @@ exports.deleteOrder = async (req, res) => {
   }
 };
 
+
 //---- Order End ------//
 exports.createUser = async (req, res) => {
   const { user } = req.body;
@@ -268,6 +269,37 @@ exports.getReseller = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+
+exports.updateResellerStatus = async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) }
+  const { statusData } = req.body;
+  const db = getDatabase();
+  try {
+    const result = await db.collection('users').updateOne(filter, { $set: statusData });
+    res.send(result)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.deleteReseller = async (req, res) => {
+  const id = req.params.id;
+  const db = getDatabase();
+  const query = { _id: new ObjectId(id) };
+  try {
+    const result = await db.collection('users').deleteOne(query);
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
 
 exports.getUser = async (req, res) => {
   try {

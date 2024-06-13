@@ -57,7 +57,7 @@ exports.checkWebUser = async (req, res) => {
     .sort({ published: -1 })
     .limit(10)
     .toArray();
-  const global = await db.collection("global").find().toArray();
+  const global = await db.collection("utils").find().toArray();
   const jdata = await db
     .collection("jobs")
     .find(jobQuery)
