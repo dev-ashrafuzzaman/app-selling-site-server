@@ -134,38 +134,26 @@ exports.webUserRegister = async (req, res) => {
       .collection("users")
       .findOne({ referCode: referId });
     if (existingreferID) {
-      const global = await db.collection("global").find().toArray();
       refBy = existingreferID.refBy;
-      refBy.push(referCode);
-      const remainingBalance =
-        parseInt(existingreferID?.balance) + parseInt(global[0].referBonus);
-      await db
-        .collection("users")
-        .updateOne(
-          { referCode: referId },
-          {
-            $set: {
-              refBy: refBy,
-              balance: parseInt(remainingBalance),
-            },
-          }
-        );
-      const userHis = {
-        uid: existingreferID._id.toString(),
-        type: `Refer-Commission`,
-        amount: parseInt(global[0].referBonus),
-        by: "User",
-        date: formattedDhakaTime,
-        status: true,
-      };
+      refBy.push({ refer: referCode, uId: email });
 
-      await db.collection("history").insertOne(userHis);
+      await db.collection("users").updateOne(
+        { referCode: referId },
+        {
+          $set: {
+            refBy: refBy,
+          },
+        }
+      );
     } else {
       return res.json({ Error: "Refer ID is not valid!" });
     }
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
+  const refMeUser = await db
+    .collection("users")
+    .findOne({ referCode: referId });
 
   const result = await db.collection("users").insertOne({
     name,
@@ -176,6 +164,7 @@ exports.webUserRegister = async (req, res) => {
     status: true,
     balance: parseInt(0),
     refBy: [],
+    refMe: refMeUser?.email,
     notice: "আপনাকে স্বাগতম",
     comStatus: true,
     joinDate: formattedDhakaTime,
@@ -186,19 +175,19 @@ exports.webUserRegister = async (req, res) => {
 
 exports.updateApplyReseller = async (req, res) => {
   const id = req.params.id;
-  const filter = { email: id }
+  const filter = { email: id };
   const { reseller } = req.body;
   const db = getDatabase();
   try {
-    const result = await db.collection('users').updateOne(filter, { $set: reseller });
-    res.send(result)
+    const result = await db
+      .collection("users")
+      .updateOne(filter, { $set: reseller });
+    res.send(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-
 
 exports.updatePassword = async (req, res) => {
   const id = req.params.id;
@@ -245,14 +234,18 @@ exports.deleteUser = async (req, res) => {
 
     const orderQuery = { uId: user.email };
 
-    const deleteUserResult = await db.collection("users").deleteOne(userQuery, { session });
+    const deleteUserResult = await db
+      .collection("users")
+      .deleteOne(userQuery, { session });
     if (deleteUserResult.deletedCount === 0) {
       await session.abortTransaction();
       session.endSession();
       return res.status(500).json({ error: "Failed to delete user" });
     }
 
-    const deleteOrdersResult = await db.collection("orders").deleteMany(orderQuery, { session });
+    const deleteOrdersResult = await db
+      .collection("orders")
+      .deleteMany(orderQuery, { session });
 
     await session.commitTransaction();
     session.endSession();

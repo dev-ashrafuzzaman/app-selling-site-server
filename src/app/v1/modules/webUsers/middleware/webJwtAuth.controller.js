@@ -44,6 +44,8 @@ exports.checkWebUser = async (req, res) => {
     govId: data?.govId,
     resellerStatus: data?.resellerStatus,
     url: data?.url,
+    refMe: data?.refMe,
+
   };
   const history = await db
     .collection("history")

@@ -21,6 +21,12 @@ router.patch(
   verifyAdmin,
   userController.updateProductStatus
 );
+router.patch(
+  "/api/v1/admin/product/edit/:id",
+  verifyJWT,
+  verifyAdmin,
+  userController.updateEditProductDetails
+);
 
 router.delete(
   "/api/v1/admin/product/:id",

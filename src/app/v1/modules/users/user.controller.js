@@ -60,6 +60,23 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+exports.updateEditProductDetails = async (req, res) => {
+
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) };
+  const { product } = req.body;
+  const db = getDatabase();
+  try {
+    const result = await db
+      .collection("products")
+      .updateOne(filter, { $set: product });
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 exports.updateProductStatus = async (req, res) => {
   const id = req.params.id;
   const filter = { _id: new ObjectId(id) };
@@ -111,7 +128,7 @@ exports.getOrders = async (req, res) => {
     const result = await db
       .collection("orders")
       .find(query)
-      .sort({ joinDate: -1 })
+      .sort({ orderTime: -1 })
       .skip((page - 1) * pageSize)
       .limit(parseInt(pageSize))
       .toArray();
@@ -139,15 +156,41 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 exports.updateOrderDelivary = async (req, res) => {
+  const dhakaTime = await getCurrentDateTimeInDhaka();
+  const formattedDhakaTime = formatDateTime(dhakaTime);
   const id = req.params.id;
   const filter = { _id: new ObjectId(id) };
   const { statusData } = req.body;
   const db = getDatabase();
   try {
-    const result = await db
-      .collection("orders")
-      .updateOne(filter, { $set: statusData });
-    res.send(result);
+    const findOrder = await db.collection("orders").findOne(filter);
+    if(findOrder.status == 'Complete'){
+      const result = await db.collection("orders").updateOne(filter, { $set: statusData });
+      res.send(result);
+    } else {
+      const refUser = await db.collection("users").findOne({ email: findOrder?.refMe });
+      const global = await db.collection("utils").find().toArray();
+      const remainingBalance = parseInt(refUser?.balance) + parseInt(global[0].referBonus);
+      await db.collection("users").updateOne({ email: findOrder?.refMe },{
+          $set: {
+            balance: parseInt(remainingBalance)
+          },
+        }
+      );
+      const userHis = {
+        uid: refUser?._id.toString(),
+        type: `Sells-Commission`,
+        amount: parseInt(global[0].referBonus),
+        by: 'Automatic',
+        date:formattedDhakaTime,
+        status: true
+      }
+      await db.collection('history').insertOne(userHis);
+      const result = await db.collection("orders").updateOne(filter, { $set: statusData });
+      res.send(result);
+    }
+    
+      
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -447,7 +490,7 @@ exports.deleteUser = async (req, res) => {
     const hQuery = { uid: user?.email };
     await db.collection("withdraws").deleteMany(hQuery);
     await db.collection("orders").deleteMany(uQuery);
-    await db.collection("history").deleteMany(hQuery);
+    await db.collection("history").deleteMany(query);
     const result = await db.collection("users").deleteOne(query);
     res.send(result);
   } catch (err) {
