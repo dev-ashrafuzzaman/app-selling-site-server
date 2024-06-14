@@ -29,3 +29,18 @@ exports.updateGlobalData = async (req, res) => {
       res.status(500).json({ error: 'Internal Server Error no update' });
     }
   };
+
+exports.updatePaymentEdit = async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) }
+    const { payment } = req.body;
+    const db = getDatabase();
+    try {
+      const result = await db.collection('utils').updateOne(filter, { $set: {paymentMathod: payment} });
+      res.send(result)
+  
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error no update' });
+    }
+  };

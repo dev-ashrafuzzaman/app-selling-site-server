@@ -76,7 +76,6 @@ exports.updateStatus = async (req, res) => {
   const id = req.params.id;
   const filter = { _id: new ObjectId(id) }
   const { statusData } = req.body;
-  console.log(statusData);
   const db = getDatabase();
   try {
     const result = await db.collection('packages').updateOne(filter, { $set: statusData });
