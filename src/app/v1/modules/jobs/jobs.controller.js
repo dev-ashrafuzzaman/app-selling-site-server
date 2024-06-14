@@ -115,14 +115,14 @@ exports.getJobs = async (req, res) => {
     const db = getDatabase();
     try {
       const user = await db.collection('users').findOne(uquery);
-      const remainingBalance = parseFloat(user.balance) + parseFloat(info.amount);
+      const remainingBalance = parseInt(user.balance) + parseInt(info.amount);
   
       if (statusValue == 'Rejected') {
         const rejected = await db.collection('jobSubmit').deleteOne(filter);
         const userHis = {
           uid: user._id.toString(),
           type: `Job- ${statusValue}`,
-          amount: parseFloat(0),
+          amount: parseInt(0),
           by: 'Admin',
           date:formattedDhakaTime,
           status: false
@@ -135,13 +135,13 @@ exports.getJobs = async (req, res) => {
       const userHis = {
         uid: user._id.toString(),
         type: `Job- ${statusValue}`,
-        amount: parseFloat(info.amount),
+        amount: parseInt(info.amount),
         by: 'Admin',
         date:formattedDhakaTime,
         status: true
       }
       await db.collection('history').insertOne(userHis);
-      await db.collection('users').updateOne(uquery, { $set: { balance: parseFloat(remainingBalance).toFixed(4) } });
+      await db.collection('users').updateOne(uquery, { $set: { balance: parseInt(remainingBalance) } });
       const result = await db.collection('jobSubmit').deleteOne(filter);
       res.send(result)
     } catch (err) {

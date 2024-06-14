@@ -38,7 +38,7 @@ exports.getPendingWithdraws = async (req, res) => {
       .skip((page - 1) * pageSize)
       .limit(parseInt(pageSize))
       .toArray();
-    const global = await db.collection('global').find().toArray();
+    const global = await db.collection('utils').find().toArray();
     const users = await db.collection('users').find().toArray();
     res.json({ totalCount, data: result, global: global[0], users });
   } catch (err) {
@@ -70,7 +70,7 @@ exports.getApprovedWithdraws = async (req, res) => {
       .skip((page - 1) * pageSize)
       .limit(parseInt(pageSize))
       .toArray();
-    const global = await db.collection('global').find().toArray();
+    const global = await db.collection('utils').find().toArray();
     const users = await db.collection('users').find().toArray();
     res.json({ totalCount, data: result, global: global[0], users });
   } catch (err) {
@@ -105,7 +105,7 @@ exports.getRejectedWithdraws = async (req, res) => {
       .limit(parseInt(pageSize))
       .toArray();
 
-    const global = await db.collection('global').find().toArray();
+    const global = await db.collection('utils').find().toArray();
     const users = await db.collection('users').find().toArray();
     res.json({ totalCount, data: result, global: global[0], users });
   } catch (err) {
@@ -155,15 +155,15 @@ exports.updateStatus = async (req, res) => {
   const db = getDatabase();
   try {
     const user = await db.collection('users').findOne(query);
-    const remainingBalance = parseFloat(user.balance).toFixed(4) + parseFloat(data.outAmount).toFixed(4);
+    const remainingBalance = parseInt(user.balance) + parseInt(data.outAmount);
 
     if (statusValue == 'Rejected') {
-      const rejected = await db.collection('users').updateOne(query, { $set: { balance: parseFloat(remainingBalance).toFixed(4) } });
+      const rejected = await db.collection('users').updateOne(query, { $set: { balance: parseInt(remainingBalance) } });
       await db.collection('withdraws').updateOne(filter, { $set: { status: statusValue } });
       const userHis = {
         uid: user._id.toString(),
         type: `Withdraw- ${statusValue}`,
-        amount: parseFloat(data?.outAmount).toFixed(4),
+        amount: parseInt(data?.outAmount),
         by: 'Admin',
         date:formattedDhakaTime,
         status: false
@@ -175,7 +175,7 @@ exports.updateStatus = async (req, res) => {
     const userHis = {
       uid: user._id.toString(),
       type: `Withdraw- ${statusValue}`,
-      amount: parseFloat(data?.outAmount).toFixed(4),
+      amount: parseInt(data?.outAmount),
       by: 'Admin',
       date:formattedDhakaTime,
       status: true
@@ -196,6 +196,7 @@ exports.deleteWithdraw = async (req, res) => {
   const db = getDatabase();
   const query = { _id: new ObjectId(id) };
   try {
+    
     const result = await db.collection('withdraws').deleteOne(query);
     res.send(result);
   } catch (err) {

@@ -17,19 +17,19 @@ exports.createWithdraw = async (req, res) => {
         const global = await db.collection('utils').find().toArray();
 
 
-        if (parseFloat(global[0]?.withdrawRules?.minAmount) > parseFloat(withdraw?.amount)) {
+        if (parseInt(global[0]?.withdrawRules?.minAmount) > parseInt(withdraw?.amount)) {
             return res.send({ Error: `Minimum Withdraw Amount ${global[0]?.withdrawRules?.minAmount}` });
-        } else if (parseFloat(global[0]?.withdrawRules?.maxAmount) < parseFloat(withdraw?.amount)) {
+        } else if (parseInt(global[0]?.withdrawRules?.maxAmount) < parseInt(withdraw?.amount)) {
             return res.send({ Error: `Maximum Withdraw Amount ${global[0]?.withdrawRules?.maxAmount}` });
         }
 
-        if (parseFloat(global[0]?.withdrawRules?.minRef) > parseInt(user?.refBy.length)) {
+        if (parseInt(global[0]?.withdrawRules?.minRef) > parseInt(user?.refBy.length)) {
             return res.send({ Error: `Minimum Refer Member ${global[0]?.withdrawRules?.minRef}` });
         }
 
-        const totalWithdraw = parseFloat(withdraw?.amount) + parseFloat(global[0]?.withdrawRules?.outAmount)
+        const totalWithdraw = parseInt(withdraw?.amount) + parseInt(global[0]?.withdrawRules?.outAmount)
 
-        if (parseFloat(user?.balance) < totalWithdraw) {
+        if (parseInt(user?.balance) < totalWithdraw) {
             return res.send({ Error: `Your Balance is Low ${user?.balance}` });
         }
 
@@ -37,15 +37,15 @@ exports.createWithdraw = async (req, res) => {
             withdrawNumber: withdraw.number,
             mathod: withdraw.method,
             uid: user.email,
-            outAmount: parseFloat(withdraw.amount),
+            outAmount: parseInt(withdraw.amount),
             status: "Pending",
             date: formattedDhakaTime,
-            currency: user.currency
+            currency: withdraw.currency
         }
 
-        const remainingBalance = parseFloat(user?.balance) - totalWithdraw;
+        const remainingBalance = parseInt(user?.balance) - totalWithdraw;
         const result = await db.collection('withdraws').insertOne(data);
-        const balanceUpdate = await db.collection('users').updateOne(query, { $set: { balance: parseFloat(remainingBalance).toFixed(4) } })
+        const balanceUpdate = await db.collection('users').updateOne(query, { $set: { balance: parseInt(remainingBalance) } })
         res.send(result)
     } catch (err) {
         res.status(500).json({ error: 'Internal Server Error' });
@@ -74,7 +74,7 @@ exports.setDailyCommission = async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) }
         const user = await db.collection('users').findOne(query);
-        const global = await db.collection('global').find().toArray();
+        const global = await db.collection('utils').find().toArray();
         const dailyCom = global[0].dailyCommission
 
         if (user.comStatus === false) {
@@ -82,12 +82,12 @@ exports.setDailyCommission = async (req, res) => {
         } else if (user.status === false) {
             return res.send({ Error: `Your account is blocked` });
         }
-        const remainingBalance = parseFloat(user?.balance) + parseFloat(dailyCom);
-        const result = await db.collection('users').updateOne(query, { $set: { balance: parseFloat(remainingBalance).toFixed(4), comStatus: false } })
+        const remainingBalance = parseInt(user?.balance) + parseInt(dailyCom);
+        const result = await db.collection('users').updateOne(query, { $set: { balance: parseInt(remainingBalance), comStatus: false } })
         const userHis = {
             uid: user._id.toString(),
             type: `Daily-Commission`,
-            amount: parseFloat(dailyCom),
+            amount: parseInt(dailyCom),
             by: 'User',
             date: formattedDhakaTime,
             status: true

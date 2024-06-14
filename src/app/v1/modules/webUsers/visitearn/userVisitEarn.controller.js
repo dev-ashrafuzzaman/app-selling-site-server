@@ -62,7 +62,7 @@ exports.setVisitClaim = async (req, res) => {
         }
         await db.collection('visitSubmit').insertOne({ uid: id, jobid: vId, visitTime: formattedDhakaTime, status: 'Complete', amount: visit.amount })
 
-        const remainingBalance = parseFloat(user?.balance) + parseFloat(visit.amount);
+        const remainingBalance = parseInt(user?.balance) + parseInt(visit.amount);
         const totalVisit = parseInt(visit?.count) + parseInt(1)
 
 
@@ -71,14 +71,14 @@ exports.setVisitClaim = async (req, res) => {
         const userHis = {
             uid: user._id.toString(),
             type: `Visit Earn`,
-            amount: parseFloat(visit.amount),
+            amount: parseInt(visit.amount),
             by: 'User',
             date: formattedDhakaTime,
             status: true
         }
         await db.collection('history').insertOne(userHis);
         
-        const result = await db.collection('users').updateOne(query, { $set: { balance: parseFloat(remainingBalance).toFixed(4) } })
+        const result = await db.collection('users').updateOne(query, { $set: { balance: parseInt(remainingBalance).toFixed(4) } })
         res.send(result);
     } catch (err) {
         res.status(500).json({ error: 'Internal Server Error' });

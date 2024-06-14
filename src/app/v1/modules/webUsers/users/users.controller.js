@@ -138,7 +138,7 @@ exports.webUserRegister = async (req, res) => {
       refBy = existingreferID.refBy;
       refBy.push(referCode);
       const remainingBalance =
-        parseFloat(existingreferID?.balance) + parseFloat(global[0].referBonus);
+        parseInt(existingreferID?.balance) + parseInt(global[0].referBonus);
       await db
         .collection("users")
         .updateOne(
@@ -146,14 +146,14 @@ exports.webUserRegister = async (req, res) => {
           {
             $set: {
               refBy: refBy,
-              balance: parseFloat(remainingBalance).toFixed(4),
+              balance: parseInt(remainingBalance),
             },
           }
         );
       const userHis = {
         uid: existingreferID._id.toString(),
         type: `Refer-Commission`,
-        amount: parseFloat(global[0].referBonus),
+        amount: parseInt(global[0].referBonus),
         by: "User",
         date: formattedDhakaTime,
         status: true,
@@ -174,7 +174,7 @@ exports.webUserRegister = async (req, res) => {
     password: hashedPassword,
     referCode,
     status: true,
-    balance: parseFloat(0),
+    balance: parseInt(0),
     refBy: [],
     notice: "আপনাকে স্বাগতম",
     comStatus: true,
