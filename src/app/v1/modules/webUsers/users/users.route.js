@@ -4,6 +4,7 @@ const verifyJWT = require('../../webUsers/middleware/webVerifyJWT');
 const verifyAdmin = require('../../webUsers/middleware/webVerifyUser');
 const router = express.Router();
 
+router.get('/api/v1/web/reseller/sell/:id',  userController.getResellerSell);
 router.get('/api/v1/web/user/order/:id',  userController.getWebOrder);
 router.get('/api/v1/web/products',  userController.getWebProducts);
 router.get('/api/v1/web/utils',  userController.webUtils);

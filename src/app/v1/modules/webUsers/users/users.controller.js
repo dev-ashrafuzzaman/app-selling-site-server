@@ -42,6 +42,26 @@ exports.webOrder = async (req, res) => {
   res.send(result);
 };
 
+exports.getResellerSell = async (req, res) => {
+  try {
+    const db = getDatabase();
+    const id = req.params.id;
+    const query = { refMe: id };
+    const result = await db.collection("orders").find(query).toArray();
+
+    // Sort the results by orderTime in descending order
+    result.sort((a, b) => {
+      const dateA = parse(a.orderTime, "dd-MM-yyyy h:mm:ss a", new Date());
+      const dateB = parse(b.orderTime, "dd-MM-yyyy h:mm:ss a", new Date());
+      return dateB - dateA; // Descending order
+    });
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 exports.getWebOrder = async (req, res) => {
   try {
     const db = getDatabase();
@@ -61,6 +81,8 @@ exports.getWebOrder = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 exports.getWebProduct = async (req, res) => {
   try {
     const db = getDatabase();
