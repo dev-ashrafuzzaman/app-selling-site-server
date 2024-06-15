@@ -61,7 +61,6 @@ exports.createProduct = async (req, res) => {
 };
 
 exports.updateEditProductDetails = async (req, res) => {
-
   const id = req.params.id;
   const filter = { _id: new ObjectId(id) };
   const { product } = req.body;
@@ -164,16 +163,23 @@ exports.updateOrderDelivary = async (req, res) => {
   const db = getDatabase();
   try {
     const findOrder = await db.collection("orders").findOne(filter);
-    if(findOrder.status == 'Complete'){
-      const result = await db.collection("orders").updateOne(filter, { $set: statusData });
+    if (findOrder.status == "Complete") {
+      const result = await db
+        .collection("orders")
+        .updateOne(filter, { $set: statusData });
       res.send(result);
     } else {
-      const refUser = await db.collection("users").findOne({ email: findOrder?.refMe });
+      const refUser = await db
+        .collection("users")
+        .findOne({ email: findOrder?.refMe });
       const global = await db.collection("utils").find().toArray();
-      const remainingBalance = parseInt(refUser?.balance) + parseInt(global[0].referBonus);
-      await db.collection("users").updateOne({ email: findOrder?.refMe },{
+      const remainingBalance =
+        parseInt(refUser?.balance) + parseInt(global[0].referBonus);
+      await db.collection("users").updateOne(
+        { email: findOrder?.refMe },
+        {
           $set: {
-            balance: parseInt(remainingBalance)
+            balance: parseInt(remainingBalance),
           },
         }
       );
@@ -181,16 +187,16 @@ exports.updateOrderDelivary = async (req, res) => {
         uid: refUser?._id.toString(),
         type: `Sells-Commission`,
         amount: parseInt(global[0].referBonus),
-        by: 'Automatic',
-        date:formattedDhakaTime,
-        status: true
-      }
-      await db.collection('history').insertOne(userHis);
-      const result = await db.collection("orders").updateOne(filter, { $set: statusData });
+        by: "Automatic",
+        date: formattedDhakaTime,
+        status: true,
+      };
+      await db.collection("history").insertOne(userHis);
+      const result = await db
+        .collection("orders")
+        .updateOne(filter, { $set: statusData });
       res.send(result);
     }
-    
-      
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -430,18 +436,35 @@ exports.getTrackWebUser = async (req, res) => {
     const db = getDatabase();
     const id = req.params.id;
     const query = { email: id };
-    const hQuery = { uId: id };
+    const oQuery = { uId: id };
+    const wQuery = { uid: id };
 
     const user = await db.collection("users").findOne(query);
 
     const order = await db
       .collection("orders")
-      .find(hQuery)
+      .find(oQuery)
       .sort({ orderTime: -1 })
       .limit(10)
       .toArray();
+
+      const hQuery = { uid: user?._id.toString() };
+
+    const history = await db
+      .collection("history")
+      .find(hQuery)
+      .sort({ date: -1 })
+      .limit(10)
+      .toArray();
+
+    const withdraw = await db
+      .collection("withdraws")
+      .find(wQuery)
+      .sort({ date: -1 })
+      .limit(10)
+      .toArray();
     const global = await db.collection("utils").find().toArray();
-    res.send({ user, order, global: global[0] });
+    res.send({ user, order, global: global[0], history, withdraw });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });

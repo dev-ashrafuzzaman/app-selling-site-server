@@ -125,7 +125,11 @@ connectToDatabase()
             res.send({ imageUrl });
         });
 
-     
+        app.post("/public/upload/product", uploadRoutes.array("images", 5), (req, res) => {
+            const imageUrls = req.files.map(file => "/public/upload/" + file.filename);
+            res.send({ imageUrls });
+          });
+          
         // Image Delete API
         app.delete("/public/upload/delete", (req, res) => {
             const filenames = req.body.filenames; // Assuming filenames are sent in the request body as an array
@@ -172,7 +176,7 @@ connectToDatabase()
         // ---------------Image Upload APIS End-----------//
 
         app.get('/', (req, res) => {
-            res.status(201).send({ serverRunning: true, ip: ip.address(), message: 'Adstra Server is Running', DevelopingStart: "21-03-2024" })
+            res.status(201).send({ serverRunning: true, ip: ip.address(), message: 'Apps Selling Server is Running', DevelopingStart: "18-05-2024" })
 
         })
 
