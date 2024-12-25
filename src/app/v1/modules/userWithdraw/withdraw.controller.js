@@ -1,6 +1,7 @@
 const { ObjectId } = require('mongodb');
 const { getDatabase } = require('../../../../utils/database');
 const { getCurrentDateTimeInDhaka, formatDateTime } = require('../../../../utils/currentDateTime');
+const getBangladeshDateTime = require('../../../../utils/currentDateTime');
 
 exports.createWithdraw = async (req, res) => {
   const { withdraw } = req.body;
@@ -145,8 +146,6 @@ exports.updateWithdraw = async (req, res) => {
 };
 
 exports.updateStatus = async (req, res) => {
-  const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
 
   const id = req.params.id;
   const { statusValue, data, date } = req.body;
@@ -165,7 +164,7 @@ exports.updateStatus = async (req, res) => {
         type: `Withdraw- ${statusValue}`,
         amount: parseInt(data?.outAmount),
         by: 'Admin',
-        date:formattedDhakaTime,
+        date:getBangladeshDateTime(),
         status: false
       }
       await db.collection('history').insertOne(userHis);
@@ -177,7 +176,7 @@ exports.updateStatus = async (req, res) => {
       type: `Withdraw- ${statusValue}`,
       amount: parseInt(data?.outAmount),
       by: 'Admin',
-      date:formattedDhakaTime,
+      date:getBangladeshDateTime(),
       status: true
     }
     await db.collection('history').insertOne(userHis);

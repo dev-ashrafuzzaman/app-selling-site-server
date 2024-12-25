@@ -1,10 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { getDatabase } = require("../../../../utils/database");
 const bcrypt = require("bcryptjs");
-const {
-  getCurrentDateTimeInDhaka,
-  formatDateTime,
-} = require("../../../../utils/currentDateTime");
+const getBangladeshDateTime = require("../../../../utils/currentDateTime");
 
 exports.getProducts = async (req, res) => {
   try {
@@ -41,6 +38,18 @@ exports.getSingleProduct = async (req, res) => {
   try {
     const db = getDatabase();
     const result = await db.collection("products").find().toArray();
+    res.send(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+exports.getSingleOrder = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const db = getDatabase();
+    const result = await db.collection("orders").findOne(query)
     res.send(result);
   } catch (err) {
     console.error(err);
@@ -155,18 +164,23 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 exports.updateOrderDelivary = async (req, res) => {
-  const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
   const id = req.params.id;
   const filter = { _id: new ObjectId(id) };
   const { statusData } = req.body;
   const db = getDatabase();
+
   try {
+    // Add deliveryTime to the statusData
+    const updatedStatusData = {
+      ...statusData,
+      deliveryTime: getBangladeshDateTime(),
+    };
+
     const findOrder = await db.collection("orders").findOne(filter);
     if (findOrder.status == "Complete") {
       const result = await db
         .collection("orders")
-        .updateOne(filter, { $set: statusData });
+        .updateOne(filter, { $set: updatedStatusData });
       res.send(result);
     } else {
       const refUser = await db
@@ -175,6 +189,7 @@ exports.updateOrderDelivary = async (req, res) => {
       const global = await db.collection("utils").find().toArray();
       const remainingBalance =
         parseInt(refUser?.balance) + parseInt(global[0].referBonus);
+
       await db.collection("users").updateOne(
         { email: findOrder?.refMe },
         {
@@ -183,18 +198,21 @@ exports.updateOrderDelivary = async (req, res) => {
           },
         }
       );
+
       const userHis = {
         uid: refUser?._id.toString(),
         type: `Sells-Commission`,
         amount: parseInt(global[0].referBonus),
         by: "Automatic",
-        date: formattedDhakaTime,
+        date: getBangladeshDateTime(),
         status: true,
       };
+
       await db.collection("history").insertOne(userHis);
+
       const result = await db
         .collection("orders")
-        .updateOne(filter, { $set: statusData });
+        .updateOne(filter, { $set: updatedStatusData });
       res.send(result);
     }
   } catch (err) {
@@ -202,6 +220,7 @@ exports.updateOrderDelivary = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 exports.deleteOrder = async (req, res) => {
   const id = req.params.id;
@@ -448,7 +467,7 @@ exports.getTrackWebUser = async (req, res) => {
       .limit(10)
       .toArray();
 
-      const hQuery = { uid: user?._id.toString() };
+    const hQuery = { uid: user?._id.toString() };
 
     const history = await db
       .collection("history")
@@ -551,8 +570,6 @@ exports.updatePassword = async (req, res) => {
 };
 
 exports.claimUserBouns = async (req, res) => {
-  const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
   const id = req.params.id;
   const filter = { _id: new ObjectId(id) };
   const { bonusValue } = req.body;
@@ -569,7 +586,7 @@ exports.claimUserBouns = async (req, res) => {
       type: "Bonus",
       amount: parseInt(bonusValue?.amount),
       by: "Admin",
-      date: formattedDhakaTime,
+      date: getBangladeshDateTime(),
       status: true,
     };
     await db.collection("history").insertOne(userHis);

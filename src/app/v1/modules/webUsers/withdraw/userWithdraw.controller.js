@@ -1,18 +1,15 @@
 const { ObjectId } = require('mongodb');
 const { getDatabase } = require('../../../../../utils/database');
 const { getCurrentDateTimeInDhaka, formatDateTime } = require('../../../../../utils/currentDateTime');
+const getBangladeshDateTime = require('../../../../../utils/currentDateTime');
 
 exports.createWithdraw = async (req, res) => {
-    const dhakaTime = await getCurrentDateTimeInDhaka();
-    const formattedDhakaTime = formatDateTime(dhakaTime);
 
     const { withdraw } = req.body;
     const db = getDatabase();
     const query = { _id: new ObjectId(withdraw.uid) }
     try {
-        if (!dhakaTime) {
-            return res.send({ Error: 'Failed to fetch Dhaka time' })
-        }
+     
         const user = await db.collection('users').findOne(query);
         const global = await db.collection('utils').find().toArray();
 
@@ -39,7 +36,7 @@ exports.createWithdraw = async (req, res) => {
             uid: user.email,
             outAmount: parseInt(withdraw.amount),
             status: "Pending",
-            date: formattedDhakaTime,
+            date: getBangladeshDateTime(),
             currency: withdraw.currency
         }
 
@@ -66,8 +63,6 @@ exports.getWithdraw = async (req, res) => {
 
 
 exports.setDailyCommission = async (req, res) => {
-    const dhakaTime = await getCurrentDateTimeInDhaka();
-    const formattedDhakaTime = formatDateTime(dhakaTime);
 
     try {
         const db = getDatabase();
@@ -89,7 +84,7 @@ exports.setDailyCommission = async (req, res) => {
             type: `Daily-Commission`,
             amount: parseInt(dailyCom),
             by: 'User',
-            date: formattedDhakaTime,
+            date: getBangladeshDateTime(),
             status: true
         }
 

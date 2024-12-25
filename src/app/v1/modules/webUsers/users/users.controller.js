@@ -8,6 +8,7 @@ const {
   getCurrentDateTimeInDhaka,
   formatDateTime,
 } = require("../../../../../utils/currentDateTime");
+const getBangladeshDateTime = require("../../../../../utils/currentDateTime");
 
 exports.webUtils = async (req, res) => {
   const db = getDatabase();
@@ -130,8 +131,6 @@ exports.webUserLogin = async (req, res) => {
 };
 
 exports.webUserRegister = async (req, res) => {
-  const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
 
   const db = getDatabase();
   const { name, email, password, referId, phone } = req.body;
@@ -189,7 +188,7 @@ exports.webUserRegister = async (req, res) => {
     refMe: refMeUser?.email,
     notice: "আপনাকে স্বাগতম",
     comStatus: true,
-    joinDate: formattedDhakaTime,
+    joinDate: getBangladeshDateTime(),
     type: "Normal",
   });
   res.json({ result, auth: true });

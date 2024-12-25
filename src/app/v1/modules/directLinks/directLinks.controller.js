@@ -1,19 +1,14 @@
 const { ObjectId } = require('mongodb');
 const { getDatabase } = require('../../../../utils/database');
-const { getCurrentDateTimeInDhaka, formatDateTime } = require('../../../../utils/currentDateTime');
+const getBangladeshDateTime = require('../../../../utils/currentDateTime');
 
 
 exports.createDirect = async (req, res) => {
-  const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
 
   const { direct } = req.body;
   const db = getDatabase();
   try {
-    if (!dhakaTime) {
-      return res.send({ Error: 'Failed to fetch Dhaka time' })
-    }
-    direct.published = formattedDhakaTime;
+    direct.published = getBangladeshDateTime();
     const result = await db.collection('directlinks').insertOne(direct);
     res.send(result)
   } catch (err) {
@@ -105,8 +100,6 @@ exports.getDirectsSubmit = async (req, res) => {
 };
 
 exports.updateDirectSubmitStatus = async (req, res) => {
-  const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
 
   const id = req.params.id;
   const { statusValue, info } = req.body;
@@ -124,7 +117,7 @@ exports.updateDirectSubmitStatus = async (req, res) => {
         type: `Direct-Link- ${statusValue}`,
         amount: parseInt(0),
         by: 'Admin',
-        date: formattedDhakaTime,
+        date: getBangladeshDateTime(),
         status: false
       }
 
@@ -137,7 +130,7 @@ exports.updateDirectSubmitStatus = async (req, res) => {
       type: `Direct-Link- ${statusValue}`,
       amount: parseInt(info.amount),
       by: 'Admin',
-      date: formattedDhakaTime,
+      date: getBangladeshDateTime(),
       status: true
     }
     await db.collection('history').insertOne(userHis);

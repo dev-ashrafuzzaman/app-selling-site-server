@@ -1,6 +1,7 @@
 const { ObjectId } = require('mongodb');
 const { getDatabase } = require('../../../../../utils/database');
 const { getCurrentDateTimeInDhaka, formatDateTime } = require('../../../../../utils/currentDateTime');
+const getBangladeshDateTime = require('../../../../../utils/currentDateTime');
 
 
 exports.getWebJob = async (req, res) => {
@@ -18,8 +19,6 @@ exports.getWebJob = async (req, res) => {
 
 
 exports.createUserJob = async (req, res) => {
-    const dhakaTime = await getCurrentDateTimeInDhaka();
-    const formattedDhakaTime = formatDateTime(dhakaTime);
   
     const { jobId } = req.body
     const db = getDatabase();
@@ -37,7 +36,7 @@ exports.createUserJob = async (req, res) => {
         if (jobCheck.length > 0) {
             return res.send({ Error: `Already completed this task` })
         }
-        const result = await db.collection('jobSubmit').insertOne({ uid: id, jobId, visitTime: formattedDhakaTime, subTime1: '', prof1: '', subTime2: '', prof2: '', amount: visit.jobPrice , status: 'Pending' })
+        const result = await db.collection('jobSubmit').insertOne({ uid: id, jobId, visitTime: getBangladeshDateTime(), subTime1: '', prof1: '', subTime2: '', prof2: '', amount: visit.jobPrice , status: 'Pending' })
         await db.collection('jobs').updateOne(vQuery, { $set: { attempt: totalVisit } })
         res.send(result);
     } catch (err) {
@@ -46,28 +45,24 @@ exports.createUserJob = async (req, res) => {
 };
 
 exports.updateUserJobSemi = async (req, res) => {
-    const dhakaTime = await getCurrentDateTimeInDhaka();
-    const formattedDhakaTime = formatDateTime(dhakaTime);
     const { jobId, prof1, subTime1 } = req.body
     const db = getDatabase();
     const id = req.params.id;
     const jQuery = { uid: id, jobId }
     try {
-        const result = await db.collection('jobSubmit').updateOne(jQuery, { $set: { prof1, subTime1: formattedDhakaTime, status: 'Semi-Submit' } })
+        const result = await db.collection('jobSubmit').updateOne(jQuery, { $set: { prof1, subTime1: getBangladeshDateTime(), status: 'Semi-Submit' } })
         res.send(result);
     } catch (err) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 exports.updateUserJobFinal = async (req, res) => {
-    const dhakaTime = await getCurrentDateTimeInDhaka();
-    const formattedDhakaTime = formatDateTime(dhakaTime);
     const { jobId, prof2, subTime2 } = req.body
     const db = getDatabase();
     const id = req.params.id;
     const jQuery = { uid: id, jobId }
     try {
-        const result = await db.collection('jobSubmit').updateOne(jQuery, { $set: { prof2, subTime2:formattedDhakaTime ,status: 'Submit'} })
+        const result = await db.collection('jobSubmit').updateOne(jQuery, { $set: { prof2, subTime2:getBangladeshDateTime() ,status: 'Submit'} })
         res.send(result);
     } catch (err) {
         res.status(500).json({ error: 'Internal Server Error' });

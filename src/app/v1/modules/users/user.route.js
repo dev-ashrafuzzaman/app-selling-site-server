@@ -134,6 +134,7 @@ router.patch(
   userController.sendNotice
 );
 
+router.get("/api/v1/web/public/order-details/:id", userController.getSingleOrder);
 router.get("/api/v1/public/user/:id", userController.getUser);
 router.get("/api/v1/public/track/user/:id", userController.getTrackUser);
 router.get("/api/v1/public/web/track/user/:id", userController.getTrackWebUser);

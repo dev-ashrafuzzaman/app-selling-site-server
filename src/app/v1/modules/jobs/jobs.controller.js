@@ -1,18 +1,14 @@
 const { ObjectId } = require('mongodb');
 const { getDatabase } = require('../../../../utils/database');
-const { getCurrentDateTimeInDhaka, formatDateTime } = require('../../../../utils/currentDateTime');
+const getBangladeshDateTime = require('../../../../utils/currentDateTime');
 
 exports.createJob = async (req, res) => {
-  const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
 
   const { job } = req.body;
   const db = getDatabase();
   try {
-    if (!dhakaTime) {
-      return res.send({ Error: 'Failed to fetch Dhaka time' })
-    }
-    job.published = formattedDhakaTime;
+ 
+    job.published = getBangladeshDateTime();
     const result = await db.collection('jobs').insertOne(job);
     res.send(result)
   } catch (err) {
@@ -105,8 +101,6 @@ exports.getJobs = async (req, res) => {
   };
 
   exports.updateJobSubmitStatus = async (req, res) => {
-    const dhakaTime = await getCurrentDateTimeInDhaka();
-  const formattedDhakaTime = formatDateTime(dhakaTime);
 
     const id = req.params.id;
     const { statusValue, info, date } = req.body;
@@ -124,7 +118,7 @@ exports.getJobs = async (req, res) => {
           type: `Job- ${statusValue}`,
           amount: parseInt(0),
           by: 'Admin',
-          date:formattedDhakaTime,
+          date:getBangladeshDateTime(),
           status: false
         }
 
@@ -137,7 +131,7 @@ exports.getJobs = async (req, res) => {
         type: `Job- ${statusValue}`,
         amount: parseInt(info.amount),
         by: 'Admin',
-        date:formattedDhakaTime,
+        date:getBangladeshDateTime(),
         status: true
       }
       await db.collection('history').insertOne(userHis);
